@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiskScope — Customer Risk Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0B1420;
+    --panel:#121D2B;
+    --panel-raised:#182534;
+    --panel-hi:#1E2E40;
+    --hairline:#243849;
+    --hairline-soft:#1B2B3B;
+    --text:#EDF2F7;
+    --text-muted:#7E93AC;
+    --text-dim:#4E6178;
+    --gold:#E8B84B;
+    --gold-dim:#8A6E2E;
+    --low:#35D0A0;
+    --low-dim:#1C4A3C;
+    --high:#FF6552;
+    --high-dim:#4A241E;
+    --radius:14px;
+    --radius-sm:8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(232,184,75,0.06), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(53,208,160,0.05), transparent 55%),
+      var(--void);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  input:focus-visible, button:focus-visible, select:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:2px;
+  }
+  ::selection{background:rgba(232,184,75,0.3);}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ---------- Auth screen ---------- */
+  #auth-screen{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:1.1fr 1fr;
+  }
+  @media (max-width:860px){
+    #auth-screen{grid-template-columns:1fr;}
+    .auth-visual{display:none;}
+  }
+  .auth-visual{
+    position:relative;
+    overflow:hidden;
+    border-right:1px solid var(--hairline);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px;
+    background:
+      linear-gradient(180deg, rgba(11,20,32,0.2), rgba(11,20,32,0.9)),
+      var(--panel);
+  }
+  .auth-visual .brand{
+    display:flex;align-items:center;gap:12px;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:20px;font-weight:600;letter-spacing:0.02em;
+    z-index:2;
+  }
+  .brand-mark{
+    width:34px;height:34px;border-radius:8px;
+    background:conic-gradient(from 180deg, var(--gold), var(--low), var(--gold));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 24px rgba(232,184,75,0.25);
+  }
+  .brand-mark::after{
+    content:'';width:14px;height:14px;border-radius:50%;background:var(--void);
+  }
+  .auth-tagline{
+    z-index:2;
+    max-width:420px;
+  }
+  .auth-tagline h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:38px;line-height:1.15;font-weight:600;
+    margin:0 0 16px;
+    letter-spacing:-0.01em;
+  }
+  .auth-tagline p{
+    color:var(--text-muted);font-size:15px;line-height:1.6;margin:0;
+  }
+  .dial-decor{
+    position:absolute;right:-160px;bottom:-160px;
+    width:520px;height:520px;
+    opacity:0.55;
+  }
+  .dial-decor svg{width:100%;height:100%;animation:spin 90s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .auth-form-wrap{
+    display:flex;align-items:center;justify-content:center;
+    padding:32px;
+  }
+  .auth-card{
+    width:100%;max-width:380px;
+  }
+  .auth-card h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:24px;margin:0 0 6px;font-weight:600;
+  }
+  .auth-card .sub{color:var(--text-muted);font-size:13.5px;margin:0 0 28px;}
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-size:12px;color:var(--text-muted);
+    margin-bottom:7px;letter-spacing:0.03em;text-transform:uppercase;font-weight:600;
+  }
+  .field input{
+    width:100%;padding:12px 14px;
+    background:var(--panel-raised);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius-sm);
+    color:var(--text);font-size:14.5px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .field input::placeholder{color:var(--text-dim);}
+  .btn-primary{
+    width:100%;padding:13px;border-radius:var(--radius-sm);
+    background:var(--gold);color:#1A1305;border:none;
+    font-weight:700;font-size:14.5px;letter-spacing:0.01em;
+    transition:transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(232,184,75,0.25);}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
+  .auth-toggle{
+    margin-top:20px;text-align:center;font-size:13.5px;color:var(--text-muted);
+  }
+  .auth-toggle button{
+    background:none;border:none;color:var(--gold);font-weight:600;font-size:13.5px;padding:0;
+  }
+  .auth-error{
+    background:rgba(255,101,82,0.1);border:1px solid rgba(255,101,82,0.35);
+    color:#FFAA9C;padding:10px 12px;border-radius:var(--radius-sm);
+    font-size:13px;margin-bottom:16px;display:none;
+  }
+  .auth-disclaimer{
+    margin-top:24px;padding:12px 14px;border-radius:var(--radius-sm);
+    background:var(--panel-raised);border:1px solid var(--hairline-soft);
+    font-size:11.5px;color:var(--text-dim);line-height:1.55;
+  }
+
+  /* ---------- App shell ---------- */
+  #app-screen{display:none;min-height:100vh;grid-template-columns:220px 1fr;}
+  @media (max-width:760px){
+    #app-screen{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .mobile-nav{display:flex !important;}
+  }
+  .sidebar{
+    border-right:1px solid var(--hairline);
+    background:var(--panel);
+    padding:22px 16px;
+    display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;
+  }
+  .sidebar .brand{
+    display:flex;align-items:center;gap:10px;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;
+    padding:0 8px 24px;
+  }
+  .sidebar .brand .brand-mark{width:26px;height:26px;}
+  .nav-item{
+    display:flex;align-items:center;gap:11px;
+    padding:11px 12px;border-radius:var(--radius-sm);
+    color:var(--text-muted);font-size:13.5px;font-weight:500;
+    background:none;border:none;width:100%;text-align:left;
+    margin-bottom:2px;transition:background 0.12s ease, color 0.12s ease;
+  }
+  .nav-item svg{flex-shrink:0;}
+  .nav-item:hover{background:var(--panel-raised);color:var(--text);}
+  .nav-item.active{background:var(--panel-hi);color:var(--gold);}
+  .sidebar-footer{margin-top:auto;}
+  .user-chip{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:var(--radius-sm);
+    background:var(--panel-raised);border:1px solid var(--hairline-soft);
+    margin-bottom:8px;
+  }
+  .user-avatar{
+    width:30px;height:30px;border-radius:50%;
+    background:linear-gradient(135deg, var(--gold), var(--low));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;color:#111;
+    flex-shrink:0;
+  }
+  .user-chip .uname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .user-chip .urole{font-size:10.5px;color:var(--text-dim);}
+  .logout-btn{
+    width:100%;padding:9px;border-radius:var(--radius-sm);
+    background:none;border:1px solid var(--hairline);
+    color:var(--text-muted);font-size:12.5px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .logout-btn:hover{border-color:var(--high);color:var(--high);}
+
+  .mobile-nav{
+    display:none;position:fixed;bottom:0;left:0;right:0;
+    background:var(--panel);border-top:1px solid var(--hairline);
+    padding:8px 6px;justify-content:space-around;z-index:50;
+  }
+  .mobile-nav button{
+    background:none;border:none;color:var(--text-muted);
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:10px;padding:6px 10px;border-radius:8px;
+  }
+  .mobile-nav button.active{color:var(--gold);}
+
+  .main{padding:28px 32px 90px;overflow-y:auto;max-height:100vh;}
+  @media (max-width:760px){.main{padding:20px 16px 90px;}}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:28px;flex-wrap:wrap;gap:12px;
+  }
+  .topbar h1{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0;font-weight:600;}
+  .topbar .desc{color:var(--text-muted);font-size:13px;margin-top:4px;}
+  .topbar-actions{display:flex;align-items:center;gap:10px;}
+  .live-status{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--hairline);border-radius:99px;color:var(--text-muted);font-size:11px;font-family:'IBM Plex Mono',monospace;}
+  .live-status::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--low);box-shadow:0 0 0 4px rgba(53,208,160,0.12);}
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  @media (max-width:980px){.summary-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:520px){.summary-grid{gap:9px;}.summary-card{padding:14px;}.summary-card .s-value{font-size:21px;}}
+  .summary-card{background:linear-gradient(145deg,var(--panel),var(--panel-raised));border:1px solid var(--hairline);border-radius:var(--radius-sm);padding:16px;}
+  .summary-card .s-label{font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:8px;}
+  .summary-card .s-value{font:700 24px 'Space Grotesk',sans-serif;color:var(--gold);}
+  .summary-card .s-note{font-size:10.5px;color:var(--text-dim);margin-top:4px;}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 11px;border-radius:99px;font-size:11.5px;font-weight:600;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .pill-low{background:var(--low-dim);color:var(--low);}
+  .pill-high{background:var(--high-dim);color:var(--high);}
+
+  .card{
+    background:var(--panel);border:1px solid var(--hairline);
+    border-radius:var(--radius);padding:22px;
+  }
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:980px){.grid-2{grid-template-columns:1fr;}}
+
+  /* ---------- Predict form ---------- */
+  .form-title{
+    font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;
+    margin:0 0 3px;
+  }
+  .form-title-sub{color:var(--text-muted);font-size:12.5px;margin:0 0 22px;}
+  .quick-profiles{display:flex;gap:7px;flex-wrap:wrap;margin:-7px 0 20px;}
+  .quick-profile{background:var(--panel-raised);border:1px solid var(--hairline);color:var(--text-muted);border-radius:var(--radius-sm);padding:7px 9px;font-size:11px;font-weight:600;}
+  .quick-profile:hover{border-color:var(--gold);color:var(--gold);}
+  .input-row{margin-bottom:18px;}
+  .input-row .lbl-line{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .input-row label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;font-weight:600;}
+  .input-row .val-readout{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);font-weight:600;}
+  .input-row input[type=range]{
+    width:100%;height:4px;-webkit-appearance:none;appearance:none;
+    background:var(--hairline);border-radius:99px;outline:none;
+  }
+  .input-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:16px;height:16px;border-radius:50%;
+    background:var(--gold);border:2px solid var(--void);
+    box-shadow:0 0 0 2px var(--gold);cursor:pointer;
+  }
+  .input-row .minmax{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-dim);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
+  .predict-btn{
+    width:100%;padding:14px;border-radius:var(--radius-sm);
+    background:linear-gradient(135deg, var(--gold), #D9A93A);
+    color:#1A1305;border:none;font-weight:700;font-size:14.5px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:6px;transition:transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .predict-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(232,184,75,0.28);}
+  .predict-btn:active{transform:translateY(0);}
+
+  /* ---------- Gauge ---------- */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;}
+  .gauge-svg{width:100%;max-width:280px;}
+  .gauge-needle{transition:transform 1.1s cubic-bezier(.22,1.4,.36,1);transform-origin:140px 140px;}
+  .gauge-readout{text-align:center;margin-top:-38px;}
+  .gauge-readout .pct{
+    font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:700;line-height:1;
+  }
+  .gauge-readout .lbl{font-size:11px;color:var(--text-muted);margin-top:4px;letter-spacing:0.05em;text-transform:uppercase;}
+  .verdict-badge{
+    margin-top:18px;padding:9px 20px;border-radius:99px;font-weight:700;
+    font-family:'Space Grotesk',sans-serif;font-size:14px;letter-spacing:0.02em;
+  }
+  .verdict-low{background:var(--low-dim);color:var(--low);border:1px solid rgba(53,208,160,0.35);}
+  .verdict-high{background:var(--high-dim);color:var(--high);border:1px solid rgba(255,101,82,0.35);}
+  .empty-gauge-hint{color:var(--text-dim);font-size:12.5px;text-align:center;margin-top:14px;max-width:220px;line-height:1.5;}
+
+  .contrib-title{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;font-weight:600;margin:26px 0 12px;}
+  .contrib-row{margin-bottom:10px;}
+  .contrib-row .cline{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;}
+  .contrib-row .cname{color:var(--text-muted);}
+  .contrib-row .cval{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .contrib-bar-bg{height:6px;background:var(--panel-raised);border-radius:99px;overflow:hidden;position:relative;}
+  .contrib-bar-fill{height:100%;border-radius:99px;transition:width 0.8s ease;}
+  .recommendation{margin-top:22px;padding:16px;border-radius:var(--radius-sm);background:linear-gradient(135deg,rgba(232,184,75,.09),rgba(53,208,160,.05));border:1px solid var(--hairline);}
+  .recommendation-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .recommendation-title{font:600 13px 'Space Grotesk',sans-serif;}
+  .recommendation-priority{font:600 10px 'IBM Plex Mono',monospace;text-transform:uppercase;color:var(--gold);}
+  .recommendation p{color:var(--text-muted);font-size:12.5px;line-height:1.55;margin:0;}
+  .recommendation-action{display:flex;gap:8px;margin-top:12px;color:var(--text);font-size:12px;font-weight:600;}
+  .recommendation-action::before{content:'→';color:var(--gold);font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- History ---------- */
+  .history-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .history-table th{
+    text-align:left;padding:10px 12px;color:var(--text-muted);
+    font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;
+    border-bottom:1px solid var(--hairline);
+  }
+  .history-table td{padding:12px;border-bottom:1px solid var(--hairline-soft);}
+  .history-table tr:last-child td{border-bottom:none;}
+  .history-table .num{font-family:'IBM Plex Mono',monospace;color:var(--text-muted);}
+  .empty-state{
+    text-align:center;padding:56px 20px;color:var(--text-dim);
+  }
+  .empty-state .icon-wrap{
+    width:52px;height:52px;border-radius:50%;background:var(--panel-raised);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 16px;
+  }
+  .empty-state h3{color:var(--text-muted);font-size:14.5px;margin:0 0 6px;font-family:'Space Grotesk',sans-serif;}
+  .empty-state p{font-size:12.5px;margin:0;}
+  .clear-btn{
+    background:none;border:1px solid var(--hairline);color:var(--text-muted);
+    padding:8px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  }
+  .clear-btn:hover{border-color:var(--high);color:var(--high);}
+
+  /* ---------- Insights ---------- */
+  .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  @media (max-width:760px){.metric-grid{grid-template-columns:repeat(2,1fr);}}
+  .metric-card{
+    background:var(--panel);border:1px solid var(--hairline);border-radius:var(--radius);
+    padding:18px;
+  }
+  .metric-card .m-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;font-weight:600;margin-bottom:8px;}
+  .metric-card .m-val{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:var(--gold);}
+  .coef-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .coef-row .cf-name{width:120px;font-size:12.5px;color:var(--text-muted);flex-shrink:0;}
+  .coef-track{flex:1;height:22px;position:relative;background:var(--panel-raised);border-radius:6px;overflow:hidden;}
+  .coef-track .zero-line{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--hairline);}
+  .coef-fill{position:absolute;top:2px;bottom:2px;border-radius:4px;}
+  .coef-val{width:64px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;flex-shrink:0;}
+  .callout{
+    background:var(--panel-raised);border:1px solid var(--hairline-soft);
+    border-left:3px solid var(--gold);border-radius:var(--radius-sm);
+    padding:16px 18px;font-size:13px;color:var(--text-muted);line-height:1.65;margin-top:20px;
+  }
+  .callout strong{color:var(--text);}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--panel-hi);border:1px solid var(--hairline);
+    padding:12px 20px;border-radius:var(--radius-sm);font-size:13px;
+    opacity:0;transition:all 0.25s ease;z-index:100;pointer-events:none;
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ============= AUTH SCREEN ============= -->
+<div id="auth-screen">
+  <div class="auth-visual">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      RiskScope
+    </div>
+    <div class="auth-tagline">
+      <h1>Read every customer<br>before they read you.</h1>
+      <p>A live instrument panel for the Group 5 customer-risk model — enter a customer's profile and watch the dial swing from low to high risk in real time.</p>
+    </div>
+    <div class="dial-decor">
+      <svg viewBox="0 0 200 200">
+        <g fill="none" stroke="#E8B84B" stroke-width="0.6" opacity="0.5">
+          <circle cx="100" cy="100" r="90"/>
+          <circle cx="100" cy="100" r="70"/>
+          <circle cx="100" cy="100" r="50"/>
+        </g>
+        <g id="decor-ticks"></g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="auth-form-wrap">
+    <div class="auth-card">
+      <div id="auth-error" class="auth-error"></div>
+
+      <!-- LOGIN -->
+      <div id="login-panel">
+        <h2>Welcome back</h2>
+        <p class="sub">Sign in to your RiskScope console.</p>
+        <div class="field">
+          <label for="login-username">Username</label>
+          <input id="login-username" type="text" placeholder="e.g. group5_analyst" autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" id="login-btn">Sign In</button>
+        <div class="auth-toggle">No account yet? <button id="show-signup">Create one</button></div>
+      </div>
+
+      <!-- SIGNUP -->
+      <div id="signup-panel" style="display:none;">
+        <h2>Create your account</h2>
+        <p class="sub">Set up access to the risk console.</p>
+        <div class="field">
+          <label for="signup-username">Username</label>
+          <input id="signup-username" type="text" placeholder="Choose a username" autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="signup-password">Password</label>
+          <input id="signup-password" type="password" placeholder="At least 4 characters" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" id="signup-btn">Create Account</button>
+        <div class="auth-toggle">Already registered? <button id="show-login">Sign in</button></div>
+      </div>
+
+      <div class="auth-disclaimer">
+        Demo authentication only — accounts and prediction history are stored in this artifact's shared workspace, visible to anyone using this app. Please don't enter real customer or personal data.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= APP SCREEN ============= -->
+<div id="app-screen">
+  <div class="sidebar">
+    <div class="brand"><div class="brand-mark"></div>RiskScope</div>
+    <button class="nav-item active" data-view="predict">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Predict
+    </button>
+    <button class="nav-item" data-view="history">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      History
+    </button>
+    <button class="nav-item" data-view="insights">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16"/><rect x="6" y="10" width="3" height="7"/><rect x="11" y="6" width="3" height="11"/><rect x="16" y="13" width="3" height="4"/></svg>
+      Model Insights
+    </button>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="uname" id="sidebar-username">—</div>
+          <div class="urole">Risk Analyst</div>
+        </div>
+      </div>
+      <button class="logout-btn" id="logout-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- PREDICT VIEW -->
+    <div id="view-predict">
+      <div class="topbar">
+        <div>
+          <h1>Risk Prediction</h1>
+          <div class="desc">Enter a customer profile to score them with the Logistic Regression model.</div>
+        </div>
+        <div class="topbar-actions"><span class="live-status">MODEL ONLINE</span></div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card"><div class="s-label">Assessments</div><div class="s-value mono" id="summary-total">0</div><div class="s-note">saved to your workspace</div></div>
+        <div class="summary-card"><div class="s-label">High risk rate</div><div class="s-value mono" id="summary-high">—</div><div class="s-note">based on your history</div></div>
+        <div class="summary-card"><div class="s-label">Average score</div><div class="s-value mono" id="summary-average">—</div><div class="s-note">probability of high risk</div></div>
+        <div class="summary-card"><div class="s-label">Last scan</div><div class="s-value mono" id="summary-last">—</div><div class="s-note">most recent assessment</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="form-title">Customer Profile</div>
+          <div class="form-title-sub">Adjust the sliders to match the customer's record.</div>
+          <div class="quick-profiles" aria-label="Quick customer profiles">
+            <button class="quick-profile" data-profile="healthy">Healthy profile</button>
+            <button class="quick-profile" data-profile="watch">Watch list</button>
+            <button class="quick-profile" data-profile="urgent">Urgent case</button>
+          </div>
+
+          <div class="input-row">
+            <div class="lbl-line"><label for="in-age">Customer Age</label><span class="val-readout" id="val-age">35</span></div>
+            <input type="range" id="in-age" min="18" max="80" value="35" step="1">
+            <div class="minmax"><span>18</span><span>80 yrs</span></div>
+          </div>
+
+          <div class="input-row">
+            <div class="lbl-line"><label for="in-spend">Monthly Spend</label><span class="val-readout" id="val-spend">$300</span></div>
+            <input type="range" id="in-spend" min="0" max="3000" value="300" step="10">
+            <div class="minmax"><span>$0</span><span>$3,000</span></div>
+          </div>
+
+          <div class="input-row">
+            <div class="lbl-line"><label for="in-visits">Visits (period)</label><span class="val-readout" id="val-visits">20</span></div>
+            <input type="range" id="in-visits" min="1" max="79" value="20" step="1">
+            <div class="minmax"><span>1</span><span>79 visits</span></div>
+          </div>
+
+          <div class="input-row">
+            <div class="lbl-line"><label for="in-complaints">Complaints</label><span class="val-readout" id="val-complaints">2</span></div>
+            <input type="range" id="in-complaints" min="0" max="15" value="2" step="1">
+            <div class="minmax"><span>0</span><span>15 complaints</span></div>
+          </div>
+
+          <button class="predict-btn" id="predict-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+            Run Prediction
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="form-title">Risk Instrument</div>
+          <div class="form-title-sub">Live readout of predicted risk probability.</div>
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 280 160" id="gauge-svg">
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#35D0A0"/>
+                  <stop offset="50%" stop-color="#E8B84B"/>
+                  <stop offset="100%" stop-color="#FF6552"/>
+                </linearGradient>
+              </defs>
+              <path d="M 20 140 A 120 120 0 0 1 260 140" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+              <g id="gauge-ticks"></g>
+              <g class="gauge-needle" id="gauge-needle" style="transform:rotate(-90deg);">
+                <line x1="140" y1="140" x2="140" y2="42" stroke="#EDF2F7" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="140" cy="140" r="7" fill="#EDF2F7"/>
+                <circle cx="140" cy="140" r="3" fill="#0B1420"/>
+              </g>
+            </svg>
+            <div class="gauge-readout">
+              <div class="pct mono" id="gauge-pct">—</div>
+              <div class="lbl">High-Risk Probability</div>
+            </div>
+            <div id="verdict-area"></div>
+          </div>
+
+          <div id="contrib-area" style="display:none;">
+            <div class="contrib-title">Feature Contribution</div>
+            <div id="contrib-rows"></div>
+          </div>
+          <div id="recommendation-area">
+            <div class="recommendation">
+              <div class="recommendation-head"><span class="recommendation-title">Decision support</span><span class="recommendation-priority">READY</span></div>
+              <p>Run a prediction to receive a practical next step based on this customer's risk profile.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY VIEW -->
+    <div id="view-history" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h1>Prediction History</h1>
+          <div class="desc">All assessments run from your account.</div>
+        </div>
+        <button class="clear-btn" id="clear-history-btn">Clear history</button>
+      </div>
+      <div class="card" id="history-card">
+        <div id="history-content"></div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS VIEW -->
+    <div id="view-insights" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h1>Model Insights</h1>
+          <div class="desc">Logistic Regression — Group 5 Business Customer Classification.</div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric-card"><div class="m-label">Accuracy</div><div class="m-val">99.8%</div></div>
+        <div class="metric-card"><div class="m-label">Precision</div><div class="m-val">99.8%</div></div>
+        <div class="metric-card"><div class="m-label">Recall</div><div class="m-val">99.8%</div></div>
+        <div class="metric-card"><div class="m-label">ROC-AUC</div><div class="m-val">0.99999</div></div>
+      </div>
+
+      <div class="card">
+        <div class="form-title">Feature Coefficients</div>
+        <div class="form-title-sub">Direction and strength of each feature's effect on the log-odds of high risk.</div>
+        <div style="margin-top:20px;" id="coef-rows"></div>
+      </div>
+
+      <div class="callout">
+        <strong>Caveat from the training notebook:</strong> this model was trained on a synthetic dataset where <span class="mono">high_risk</span> was constructed directly from a linear combination of these four features, which is why performance is near-perfect. Treat these predictions as a demonstration of the modeling pipeline, not as a validated real-world risk score.
+      </div>
+    </div>
+  </div>
+
+  <div class="mobile-nav">
+    <button class="active" data-view="predict">Predict</button>
+    <button data-view="history">History</button>
+    <button data-view="insights">Insights</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  // ---------------- Model ----------------
+  const COEF = { age: 1.24717374, spend: 0.000655952444, visits: 2.48821009, complaints: -4.76202549 };
+  const INTERCEPT = -154.75752775;
+
+  function predict(inputs){
+    const z = INTERCEPT + COEF.age*inputs.age + COEF.spend*inputs.spend + COEF.visits*inputs.visits + COEF.complaints*inputs.complaints;
+    const prob = 1/(1+Math.exp(-z));
+    return { probability: prob, isHighRisk: prob >= 0.5 };
+  }
+
+  // ---------------- Storage helpers ----------------
+  async function safeGet(key, shared){
+    try {
+      if(window.storage && typeof window.storage.get === 'function') return await window.storage.get(key, shared);
+      const value = localStorage.getItem(`riskscope:${shared?'shared:':''}${key}`);
+      return value === null ? null : { value };
+    } catch(e){ return null; }
+  }
+  async function safeSet(key, value, shared){
+    try {
+      if(window.storage && typeof window.storage.set === 'function') return await window.storage.set(key, value, shared);
+      localStorage.setItem(`riskscope:${shared?'shared:':''}${key}`, value);
+      return { value };
+    } catch(e){ console.error('storage set failed', e); return null; }
+  }
+  async function safeDelete(key, shared){
+    try {
+      if(window.storage && typeof window.storage.delete === 'function') return await window.storage.delete(key, shared);
+      localStorage.removeItem(`riskscope:${shared?'shared:':''}${key}`);
+      return true;
+    } catch(e){ return null; }
+  }
+
+  async function sha256(text){
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // ---------------- State ----------------
+  let currentUser = null;
+
+  function userKey(u){ return u.trim().toLowerCase(); }
+
+  // ---------------- Toast ----------------
+  let toastTimer = null;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove('show'), 2400);
+  }
+
+  // ---------------- Auth UI wiring ----------------
+  const authError = document.getElementById('auth-error');
+  function setAuthError(msg){
+    if(!msg){ authError.style.display='none'; authError.textContent=''; return; }
+    authError.style.display='block'; authError.textContent = msg;
+  }
+
+  document.getElementById('show-signup').onclick = ()=>{
+    document.getElementById('login-panel').style.display='none';
+    document.getElementById('signup-panel').style.display='block';
+    setAuthError(null);
+  };
+  document.getElementById('show-login').onclick = ()=>{
+    document.getElementById('signup-panel').style.display='none';
+    document.getElementById('login-panel').style.display='block';
+    setAuthError(null);
+  };
+
+  document.getElementById('signup-btn').onclick = async ()=>{
+    const uRaw = document.getElementById('signup-username').value;
+    const p = document.getElementById('signup-password').value;
+    const u = uRaw.trim();
+    setAuthError(null);
+    if(u.length < 3){ setAuthError('Username must be at least 3 characters.'); return; }
+    if(p.length < 4){ setAuthError('Password must be at least 4 characters.'); return; }
+    const btn = document.getElementById('signup-btn');
+    btn.disabled = true; btn.textContent = 'Creating…';
+    try{
+      const existing = await safeGet('users:'+userKey(u), true);
+      if(existing){ setAuthError('That username is already taken.'); return; }
+      const hash = await sha256(p);
+      await safeSet('users:'+userKey(u), JSON.stringify({ username:u, passwordHash:hash, createdAt:Date.now() }), true);
+      await safeSet('session', JSON.stringify({ username:u }), false);
+      currentUser = u;
+      enterApp();
+    } catch(e){
+      setAuthError('Something went wrong creating your account. Please try again.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create Account';
+    }
+  };
+
+  document.getElementById('login-btn').onclick = async ()=>{
+    const uRaw = document.getElementById('login-username').value;
+    const p = document.getElementById('login-password').value;
+    const u = uRaw.trim();
+    setAuthError(null);
+    if(!u || !p){ setAuthError('Enter both username and password.'); return; }
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    try{
+      const rec = await safeGet('users:'+userKey(u), true);
+      if(!rec){ setAuthError('No account found with that username.'); return; }
+      const data = JSON.parse(rec.value);
+      const hash = await sha256(p);
+      if(hash !== data.passwordHash){ setAuthError('Incorrect password.'); return; }
+      await safeSet('session', JSON.stringify({ username:data.username }), false);
+      currentUser = data.username;
+      enterApp();
+    } catch(e){
+      setAuthError('Sign in failed. Please try again.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Sign In';
+    }
+  };
+
+  document.getElementById('logout-btn').onclick = async ()=>{
+    await safeDelete('session', false);
+    currentUser = null;
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'grid';
+    document.getElementById('login-username').value='';
+    document.getElementById('login-password').value='';
+  };
+
+  // ---------------- App shell ----------------
+  function enterApp(){
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'grid';
+    document.getElementById('sidebar-username').textContent = currentUser;
+    document.getElementById('sidebar-avatar').textContent = currentUser.slice(0,1).toUpperCase();
+    switchView('predict');
+    loadHistory();
+    refreshSummary();
+  }
+
+  function switchView(view){
+    document.querySelectorAll('.nav-item').forEach(b=> b.classList.toggle('active', b.dataset.view===view));
+    document.querySelectorAll('.mobile-nav button').forEach(b=> b.classList.toggle('active', b.dataset.view===view));
+    ['predict','history','insights'].forEach(v=>{
+      document.getElementById('view-'+v).style.display = (v===view) ? 'block' : 'none';
+    });
+    if(view==='history') loadHistory();
+  }
+  document.querySelectorAll('[data-view]').forEach(el=>{
+    el.addEventListener('click', ()=> switchView(el.dataset.view));
+  });
+
+  // ---------------- Predict view wiring ----------------
+  const sliders = {
+    age: document.getElementById('in-age'),
+    spend: document.getElementById('in-spend'),
+    visits: document.getElementById('in-visits'),
+    complaints: document.getElementById('in-complaints'),
+  };
+  const readouts = {
+    age: document.getElementById('val-age'),
+    spend: document.getElementById('val-spend'),
+    visits: document.getElementById('val-visits'),
+    complaints: document.getElementById('val-complaints'),
+  };
+  function syncReadouts(){
+    readouts.age.textContent = sliders.age.value;
+    readouts.spend.textContent = '$' + Number(sliders.spend.value).toLocaleString();
+    readouts.visits.textContent = sliders.visits.value;
+    readouts.complaints.textContent = sliders.complaints.value;
+  }
+  Object.values(sliders).forEach(s=> s.addEventListener('input', syncReadouts));
+  syncReadouts();
+
+  const profiles = {
+    healthy: { age:28, spend:650, visits:32, complaints:0 },
+    watch: { age:48, spend:420, visits:19, complaints:4 },
+    urgent: { age:66, spend:120, visits:6, complaints:10 },
+  };
+  document.querySelectorAll('.quick-profile').forEach(button=>{
+    button.addEventListener('click', ()=>{
+      const profile = profiles[button.dataset.profile];
+      Object.keys(profile).forEach(key=> sliders[key].value = profile[key]);
+      syncReadouts();
+      showToast(`${button.textContent} loaded`);
+    });
+  });
+
+  // gauge ticks
+  (function buildTicks(){
+    const g = document.getElementById('gauge-ticks');
+    const cx=140, cy=140, rOuter=120, rInner=108;
+    for(let i=0;i<=10;i++){
+      const angle = -180 + (i/10)*180;
+      const rad = angle * Math.PI/180;
+      const x1 = cx + rOuter*Math.cos(rad), y1 = cy + rOuter*Math.sin(rad);
+      const x2 = cx + rInner*Math.cos(rad), y2 = cy + rInner*Math.sin(rad);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+      line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+      line.setAttribute('stroke','#243849'); line.setAttribute('stroke-width','2');
+      g.appendChild(line);
+    }
+  })();
+  (function buildDecorTicks(){
+    const g = document.getElementById('decor-ticks');
+    if(!g) return;
+    for(let i=0;i<36;i++){
+      const angle = i*10;
+      const rad = angle*Math.PI/180;
+      const r1=90, r2 = i%3===0 ? 82 : 86;
+      const x1=100+r1*Math.cos(rad), y1=100+r1*Math.sin(rad);
+      const x2=100+r2*Math.cos(rad), y2=100+r2*Math.sin(rad);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',x1);line.setAttribute('y1',y1);
+      line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+      line.setAttribute('stroke','#E8B84B');line.setAttribute('stroke-width','0.6');
+      g.appendChild(line);
+    }
+  })();
+
+  function updateGauge(prob){
+    const angle = -90 + prob*180; // -90 (0%) to +90 (100%)
+    document.getElementById('gauge-needle').style.transform = `rotate(${angle}deg)`;
+    document.getElementById('gauge-pct').textContent = (prob*100).toFixed(1)+'%';
+    document.getElementById('gauge-pct').style.color = prob>=0.5 ? 'var(--high)' : 'var(--low)';
+  }
+
+  function renderVerdict(isHigh){
+    const area = document.getElementById('verdict-area');
+    area.innerHTML = `<div class="verdict-badge ${isHigh?'verdict-high':'verdict-low'}">${isHigh?'⚠ High Risk':'✓ Low Risk'}</div>`;
+  }
+
+  function renderContributions(inputs){
+    const contribs = [
+      { name:'Customer Age', raw: COEF.age*inputs.age },
+      { name:'Monthly Spend', raw: COEF.spend*inputs.spend },
+      { name:'Visits', raw: COEF.visits*inputs.visits },
+      { name:'Complaints', raw: COEF.complaints*inputs.complaints },
+    ];
+    const maxAbs = Math.max(...contribs.map(c=>Math.abs(c.raw)), 0.0001);
+    const rowsEl = document.getElementById('contrib-rows');
+    rowsEl.innerHTML = contribs.map(c=>{
+      const pct = Math.min(100, Math.abs(c.raw)/maxAbs*100);
+      const color = c.raw >= 0 ? 'var(--high)' : 'var(--low)';
+      const side = c.raw >= 0 ? 'right' : 'left';
+      return `<div class="contrib-row">
+        <div class="cline"><span class="cname">${c.name}</span><span class="cval" style="color:${color}">${c.raw>=0?'+':''}${c.raw.toFixed(2)}</span></div>
+        <div class="contrib-bar-bg"><div class="contrib-bar-fill" style="width:${pct}%;background:${color};float:${side==='left'?'right':'left'}"></div></div>
+      </div>`;
+    }).join('');
+    document.getElementById('contrib-area').style.display = 'block';
+  }
+
+  function renderRecommendation(inputs, result){
+    const area = document.getElementById('recommendation-area');
+    const complaintPressure = inputs.complaints >= 5;
+    const engagementDrop = inputs.visits <= 12;
+    const priority = result.isHighRisk ? 'PRIORITY' : 'MONITOR';
+    const title = result.isHighRisk ? 'Intervene before churn' : 'Maintain the relationship';
+    const reason = result.isHighRisk
+      ? 'The current profile shows a meaningful probability of high risk. Focus on the strongest negative signals first.'
+      : 'The current profile is in the lower-risk range. Preserve the behaviors that are keeping this customer engaged.';
+    let action = result.isHighRisk
+      ? 'Assign an owner and schedule a personal follow-up within 48 hours.'
+      : 'Offer a relevant loyalty touchpoint and review the profile again next cycle.';
+    if(complaintPressure){ action = 'Resolve open complaints first, then confirm satisfaction with a follow-up call.'; }
+    else if(engagementDrop){ action = 'Launch a re-engagement message and check for service friction or unmet needs.'; }
+    area.innerHTML = `<div class="recommendation">
+      <div class="recommendation-head"><span class="recommendation-title">${title}</span><span class="recommendation-priority">${priority}</span></div>
+      <p>${reason}</p><div class="recommendation-action">${action}</div>
+    </div>`;
+  }
+
+  async function refreshSummary(){
+    const list = await getHistoryList();
+    const highCount = list.filter(record=>record.isHighRisk).length;
+    const average = list.length ? list.reduce((sum, record)=>sum + record.probability, 0) / list.length : null;
+    document.getElementById('summary-total').textContent = list.length;
+    document.getElementById('summary-high').textContent = list.length ? `${Math.round(highCount/list.length*100)}%` : '—';
+    document.getElementById('summary-average').textContent = average === null ? '—' : `${(average*100).toFixed(1)}%`;
+    document.getElementById('summary-last').textContent = list.length ? fmtDate(list[0].ts).split(' · ')[0] : '—';
+  }
+
+  document.getElementById('predict-btn').addEventListener('click', async ()=>{
+    const inputs = {
+      age: Number(sliders.age.value),
+      spend: Number(sliders.spend.value),
+      visits: Number(sliders.visits.value),
+      complaints: Number(sliders.complaints.value),
+    };
+    const result = predict(inputs);
+    updateGauge(result.probability);
+    renderVerdict(result.isHighRisk);
+    renderContributions(inputs);
+    renderRecommendation(inputs, result);
+    await saveRecord(inputs, result);
+    refreshSummary();
+    showToast('Prediction saved to history');
+  });
+
+  // ---------------- History ----------------
+  async function getHistoryList(){
+    if(!currentUser) return [];
+    const rec = await safeGet('predictions:'+userKey(currentUser), true);
+    if(!rec) return [];
+    try { return JSON.parse(rec.value); } catch(e){ return []; }
+  }
+
+  async function saveRecord(inputs, result){
+    const list = await getHistoryList();
+    list.unshift({
+      id: Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      ts: Date.now(),
+      inputs,
+      probability: result.probability,
+      isHighRisk: result.isHighRisk,
+    });
+    await safeSet('predictions:'+userKey(currentUser), JSON.stringify(list.slice(0,200)), true);
+  }
+
+  function fmtDate(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  }
+
+  async function loadHistory(){
+    const content = document.getElementById('history-content');
+    content.innerHTML = `<div class="empty-state"><div class="icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7E93AC" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div><h3>Loading…</h3></div>`;
+    const list = await getHistoryList();
+    if(list.length === 0){
+      content.innerHTML = `<div class="empty-state">
+        <div class="icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7E93AC" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+        <h3>No predictions yet</h3>
+        <p>Run a prediction from the Predict tab and it will show up here.</p>
+      </div>`;
+      return;
+    }
+    const rows = list.map(r=> `
+      <tr>
+        <td class="num">${fmtDate(r.ts)}</td>
+        <td class="num">${r.inputs.age}</td>
+        <td class="num">$${Number(r.inputs.spend).toLocaleString()}</td>
+        <td class="num">${r.inputs.visits}</td>
+        <td class="num">${r.inputs.complaints}</td>
+        <td class="num">${(r.probability*100).toFixed(1)}%</td>
+        <td><span class="pill ${r.isHighRisk?'pill-high':'pill-low'}">${r.isHighRisk?'HIGH':'LOW'}</span></td>
+      </tr>`).join('');
+    content.innerHTML = `<div style="overflow-x:auto;"><table class="history-table">
+      <thead><tr><th>When</th><th>Age</th><th>Spend</th><th>Visits</th><th>Complaints</th><th>P(High)</th><th>Verdict</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  }
+
+  document.getElementById('clear-history-btn').addEventListener('click', async ()=>{
+    if(!currentUser) return;
+    if(!confirm('Clear all prediction history for this account? This cannot be undone.')) return;
+    await safeDelete('predictions:'+userKey(currentUser), true);
+    loadHistory();
+    refreshSummary();
+    showToast('History cleared');
+  });
+
+  // ---------------- Insights view ----------------
+  (function buildCoefRows(){
+    const rows = [
+      { name:'Customer Age', val: COEF.age },
+      { name:'Monthly Spend', val: COEF.spend },
+      { name:'Visits', val: COEF.visits },
+      { name:'Complaints', val: COEF.complaints },
+    ];
+    const maxAbs = Math.max(...rows.map(r=>Math.abs(r.val)));
+    const el = document.getElementById('coef-rows');
+    el.innerHTML = rows.map(r=>{
+      const pct = Math.abs(r.val)/maxAbs*48; // half-track max
+      const color = r.val>=0 ? 'var(--high)' : 'var(--low)';
+      const style = r.val>=0
+        ? `left:50%;width:${pct}%;background:${color};`
+        : `right:50%;width:${pct}%;background:${color};`;
+      return `<div class="coef-row">
+        <div class="cf-name">${r.name}</div>
+        <div class="coef-track"><div class="zero-line"></div><div class="coef-fill" style="${style}"></div></div>
+        <div class="coef-val" style="color:${color}">${r.val>=0?'+':''}${r.val.toFixed(4)}</div>
+      </div>`;
+    }).join('');
+  })();
+
+  // ---------------- Boot ----------------
+  async function boot(){
+    const session = await safeGet('session', false);
+    if(session){
+      try{
+        const data = JSON.parse(session.value);
+        if(data && data.username){
+          currentUser = data.username;
+          enterApp();
+          return;
+        }
+      } catch(e){}
+    }
+    document.getElementById('auth-screen').style.display = 'grid';
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
